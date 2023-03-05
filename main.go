@@ -2,8 +2,11 @@ package main
 
 import(
 	"log"
-	"crypto/md5"
+	//"crypto/md5"
+	//"strconv"
+	//"encoding/hex"
 	//"error"
+	"github.com/NobleUche/code-generator"
 	"github.com/gorilla/mux"
 	"github.com/mazen160/go-random"
 	"net/http"
@@ -60,7 +63,7 @@ func main(){
 	router.HandleFunc("/api/v1/vendorsignup",Vendorsignup).Methods("POST")
 	router.HandleFunc("/api/v1/vendor/{id}",GetVendor).Methods("GET")
 	router.HandleFunc("/api/v1/vendors",GetAllVendors).Methods("GET")
-	router.HandleFunc("/api/v1/search",SearchProducts).Methods("POST")
+	//router.HandleFunc("/api/v1/search",SearchProducts).Methods("POST")
 	Server:= http.Server{
 		Addr:":9000",
 		Handler: router,
@@ -148,21 +151,19 @@ func Vendorsignup(w http.ResponseWriter, r *http.Request){
 	var err error
 	//var vendorsid string
 	json.NewDecoder(r.Body).Decode(&vendors)
-	V:=vendors.Name
+	V:=vendors.Name + vendors.Email
 	Id:=func (n string){
 		data, err = random.GetInt(len(n))
 		if err != nil{
 			log.Fatal(err)
 		}
 		//gdata:=data+
-		vendors.VendorId=md5.Sum(data)
+		vendors.VendorId=data
 	}
-	// Use cryptography and seed on the rand result 
+	// Create my own package to handle generation of Id and code
 	Id(V)
 	Db.Create(&vendors)
-	json.NewEncoder(w).Encode(vendors)
-}
-
+	
 func GetVendor(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	params:= mux.Vars(r)
@@ -183,20 +184,6 @@ func GetAllVendors(w http.ResponseWriter, r *http.Request){
 // Search functions 
 
 /* The search functions is not working as it is not returning the right values*/
-
-func SearchProducts(w http.ResponseWriter, r *http.Request){
-	w.Header().Set("Content-Type","application/json")
-	var products Product  
-	var search string
-	//json.NewDecoder(r.Body).Decode(&search)
-	//Db.Where("name = ?",search_query).Find(&products)
-	Db.Find(&products, search)
-	json.NewEncoder(w).Encode(products)
-}
-
-/*func SearchVendors(w http.ResponseWriter, r *http.Request){
-s	w.Header().Set("Content-Type", "application/json")	
-} */
 
 
 /* Setup email code verification and vendor Id code generation*/
