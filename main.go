@@ -1,14 +1,13 @@
 package main
 
 import(
+	"os"
 	"log"
-	//"crypto/md5"
-	//"strconv"
-	//"encoding/hex"
-	//"error"
+	//"net/smtp"
+	//"github.com/joho/godotenv"
 	"github.com/NobleUche/code-generator"
 	"github.com/gorilla/mux"
-	"github.com/mazen160/go-random"
+//	"github.com/mazen160/go-random"
 	"net/http"
 	"encoding/json"
 	"gorm.io/gorm"
@@ -16,9 +15,6 @@ import(
 	"fmt"
 )
 
-// Database Connection 
-
-const DSN = "postgresql://postgres:peculiar@localhost:5432/test"
 
 // structs
 
@@ -29,7 +25,6 @@ type Product struct{
 	Category string `json:"category"`
 	VendorId uint `json:vendorid`
 	Vendoremail string `json:"vendoremail"`
-	//Vendors Vendor `gorm:"association_foreignkey:Seller"`
 	//Image string `json:"image"`
 }
 
@@ -38,7 +33,7 @@ type Vendor struct{
 	Name string `json:"name"`
 	Email string `json:"email"`
 	Walletaddress string `json:"walletaddress"`
-	VendorId int `json:"vendorid"`
+	VendorId string `json:"vendorid"`
 }
 
 
@@ -63,7 +58,6 @@ func main(){
 	router.HandleFunc("/api/v1/vendorsignup",Vendorsignup).Methods("POST")
 	router.HandleFunc("/api/v1/vendor/{id}",GetVendor).Methods("GET")
 	router.HandleFunc("/api/v1/vendors",GetAllVendors).Methods("GET")
-	//router.HandleFunc("/api/v1/search",SearchProducts).Methods("POST")
 	Server:= http.Server{
 		Addr:":9000",
 		Handler: router,
@@ -74,6 +68,9 @@ func main(){
 
 func ConnectDB(){
 	// Database connection
+	//godotenv.Load()
+	DSN:=os.Getenv("Postgresql-url")
+
 	Db,err = gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil{
 		panic("failed to connect")
@@ -81,6 +78,9 @@ func ConnectDB(){
 	fmt.Println("Successfully connected")
 	Db.AutoMigrate(&Product{}, Vendor{})
  }
+
+
+// Product functions
 
 func GetAllProducts(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
@@ -106,22 +106,7 @@ func GetProduct(w http.ResponseWriter, r *http.Request){
 		Db.First(&products, params["id"])
 		json.NewEncoder(w).Encode(products)
 
-	}/*else if r.Method=="PUT"{
-		// format is get request then post request
-		Db.First(&products,params["productid"])
-		json.NewDecoder(r.Body).Decode(&products)
-		Db.Save(&products)
-		json.NewEncoder(w).Encode(products)
-
-		}else if r.Method == "DELETE"{
-			Db.Delete(&products,params["productid"])
-			//json.NewDecoder(r.Body).Decode(&products)
-			//Db.Save(&products)
-			json.NewEncoder(w).Encode("The User is deleted Successfully ")
-
-
-	}*/
-
+	}
 }
 
 func UpdateProduct(w http.ResponseWriter, r *http.Request){
@@ -144,25 +129,36 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode("Product deleted successfully")
 }
 
+
+// Vendor functions
+
 func Vendorsignup(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	var vendors Vendor
-	var data int
-	var err error
 	//var vendorsid string
 	json.NewDecoder(r.Body).Decode(&vendors)
-	V:=vendors.Name + vendors.Email
+	// Vendor-Id generation
 	Id:=func (n string){
-		data, err = random.GetInt(len(n))
+		data, err := generate.GetId(vendors.Email)
 		if err != nil{
-			log.Fatal(err)
+			panic(err)
 		}
-		//gdata:=data+
 		vendors.VendorId=data
 	}
-	// Create my own package to handle generation of Id and code
-	Id(V)
+	// Email-verification generation and sending
+	/*Code:= func (n string){
+		dta,err=generate.GetCode(vendors.Name)
+		if err !=nil{
+			panic(err)
+		}
+		Email_Code:=dta
+		fmt.Println(Email_Code)  
+	}*/
+	
+	Id(vendors.Email)
 	Db.Create(&vendors)
+	json.NewEncoder(w).Encode(vendors)
+}
 	
 func GetVendor(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
@@ -181,12 +177,27 @@ func GetAllVendors(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(allvendors)
 }
 
-// Search functions 
+// Email function
 
-/* The search functions is not working as it is not returning the right values*/
+/*func EmailSetup(n ,j string){
+	from:=os.Getenv("Email")
+	password:=os.Getenv("Password")
+	//toEmail:=// user email here
+	host:="smtp.gmail.com"
+	port:="587"
+	address:= host+":"+port
+	subject:= "Shoppleverse Verification Code"
+	//body:= // verification code here
+	message:=[]byte(subject+body)
+	//email authentication
+	auth:=smtp.PlainAuth("",from,password, host)
+	//send email
+	err:=smtp.SendEmail(address, auth, from, to, message)
+	if err !=nil{
+		panic(err)
+	}
 
-
-/* Setup email code verification and vendor Id code generation*/
+}*/
 
 
 
