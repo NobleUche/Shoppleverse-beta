@@ -80,7 +80,7 @@ func GetAllVendors(w http.ResponseWriter, r *http.Request){
 func EmailSetup(receiver_email ,verification_code string){
 	from:=os.Getenv("Email")// string
 	password:=os.Getenv("Password")
-	to:=[]string(receiver_email)// user email here said it is []string though
+	to:=[]string{receiver_email}// user email here said it is []string though
 	host:="smtp.gmail.com"//string
 	port:="587"
 	address:= host+":"+port
