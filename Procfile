@@ -1,2 +1,2 @@
-web: go run main.go
+web: ./market.exe
  
